@@ -1,0 +1,23 @@
+{
+  "extends": ["react-app", "react-app/jest"],
+  "rules": {
+    // Security rules
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "no-script-url": "error",
+    "no-unsafe-optional-chaining": "error",
+    "default-case": "error",
+    "no-implicit-coercion": "error",
+    
+    // React security
+    "react/no-danger": "error",
+    "react/jsx-no-script-url": "error",
+    "react/jsx-no-undef": "error",
+    
+    // Best practices
+    "no-console": "warn",
+    "no-debugger": "error",
+    "no-alert": "error"
+  }
+}
