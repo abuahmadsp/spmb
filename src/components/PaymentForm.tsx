@@ -49,6 +49,12 @@ export function PaymentForm({ onBack, onNext, onNavigateLogin, selectedCampus }:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validasi bahwa bukti pembayaran telah diunggah
+    if (!proofOfPayment) {
+      alert('Mohon unggah bukti pembayaran terlebih dahulu.');
+      return;
+    }
+    
     // Di sini Anda akan mengirim data pembayaran ke server
     // Untuk sekarang, kita langsung lanjut ke halaman berikutnya
     onNext();
@@ -183,7 +189,11 @@ export function PaymentForm({ onBack, onNext, onNavigateLogin, selectedCampus }:
                 )}
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700" 
+                    disabled={!proofOfPayment}
+                  >
                     Simpan dan Lanjutkan
                   </Button>
                 </div>

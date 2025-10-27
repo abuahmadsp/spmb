@@ -12,7 +12,9 @@ import {
   XCircle,
   UserCheck,
   UserX,
-  School
+  School,
+  Settings,
+  UserPlus
 } from 'lucide-react';
 import { User } from '../App';
 import { 
@@ -31,6 +33,7 @@ import {
   Line
 } from 'recharts';
 import { DataDownload } from './DataDownload';
+import { SchoolAdminCRUD } from './SchoolAdminCRUD';
 
 interface SchoolAdminDashboardProps {
   user: User & { campusId?: string };
@@ -50,6 +53,8 @@ interface Applicant {
 }
 
 export function SchoolAdminDashboard({ user, onLogout }: SchoolAdminDashboardProps) {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users'>('dashboard');
+  
   // Mock data - all applicants
   const [allApplicants, setAllApplicants] = useState<Applicant[]>([
     {
@@ -234,22 +239,44 @@ export function SchoolAdminDashboard({ user, onLogout }: SchoolAdminDashboardPro
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* School Info Banner */}
-        <Card className="mb-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-0">
-          <CardContent className="py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="mb-1">{schoolNames[user.school || '']}</h2>
-                <p className="text-emerald-100">
-                  Kelola dan verifikasi pendaftar untuk {user.school}
-                </p>
-              </div>
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                <GraduationCap className="text-white" size={32} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-gray-200 mb-8">
+          <Button
+            variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+            className={`rounded-none border-b-2 ${activeTab === 'dashboard' ? 'border-emerald-600 -mb-0.5' : 'border-transparent'}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            <GraduationCap className="mr-2 h-4 w-4" />
+            Dashboard Pendaftar
+          </Button>
+          <Button
+            variant={activeTab === 'users' ? 'default' : 'ghost'}
+            className={`rounded-none border-b-2 ${activeTab === 'users' ? 'border-emerald-600 -mb-0.5' : 'border-transparent'}`}
+            onClick={() => setActiveTab('users')}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Manajemen Pengguna
+          </Button>
+        </div>
+
+        {activeTab === 'dashboard' && (
+          <>
+            {/* School Info Banner */}
+            <Card className="mb-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-0">
+              <CardContent className="py-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="mb-1">{schoolNames[user.school || '']}</h2>
+                    <p className="text-emerald-100">
+                      Kelola dan verifikasi pendaftar untuk {user.school}
+                    </p>
+                  </div>
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                    <GraduationCap className="text-white" size={32} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
         {/* Statistics Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
@@ -456,7 +483,14 @@ export function SchoolAdminDashboard({ user, onLogout }: SchoolAdminDashboardPro
             )}
           </CardContent>
         </Card>
-      </div>
+      </>
+    )}
+    
+    {activeTab === 'users' && (
+      <SchoolAdminCRUD school={user.school} />
+    )}
+  </div>
+</div>
     </div>
   );
 }

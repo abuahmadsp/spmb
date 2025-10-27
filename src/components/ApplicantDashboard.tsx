@@ -39,6 +39,10 @@ export function ApplicantDashboard({ user, onLogout }: ApplicantDashboardProps) 
     notes: ''
   });
 
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const [uploadedFiles, setUploadedFiles] = useState({
     akte: null as File | null,
     kk: null as File | null,
