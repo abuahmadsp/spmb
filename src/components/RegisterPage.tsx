@@ -27,6 +27,7 @@ export function RegisterPage({ onRegister, onNavigateLogin, onBack }: RegisterPa
     school: '',
     tkClass: ''
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Get selected campus from session storage
@@ -38,7 +39,65 @@ export function RegisterPage({ onRegister, onNavigateLogin, onBack }: RegisterPa
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createUserAndRegister = async () => {
+    try {
+      // Register user ke backend
+      const userResponse = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          phone: formData.phone,
+        }),
+      });
+
+      if (!userResponse.ok) {
+        const errorData = await userResponse.json();
+        throw new Error(errorData.error || 'Gagal membuat akun');
+      }
+
+      const userData = await userResponse.json();
+      
+      // Setelah akun dibuat, buat pendaftaran
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token tidak ditemukan');
+      }
+      
+      const applicantResponse = await fetch('/api/applicants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          campus_id: selectedCampus.campusId,
+          school_id: selectedCampus.schoolLevel,
+          tk_class: formData.tkClass,
+        }),
+      });
+
+      if (!applicantResponse.ok) {
+        const errorData = await applicantResponse.json();
+        throw new Error(errorData.error || 'Gagal membuat pendaftaran');
+      }
+
+      const applicantData = await applicantResponse.json();
+      
+      // Return both user and applicant data
+      return { ...userData.user, applicant_id: applicantData.applicant.id };
+    } catch (error: any) {
+      console.error('Error creating user and registration:', error);
+      alert(error.message || 'Terjadi kesalahan saat membuat akun dan pendaftaran');
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validasi jika jenjang adalah TK, maka kelas harus dipilih
@@ -53,8 +112,15 @@ export function RegisterPage({ onRegister, onNavigateLogin, onBack }: RegisterPa
       return;
     }
     
-    // Jika validasi lolos, lanjut ke form pembayaran
-    setCurrentStep(2);
+    setLoading(true);
+    try {
+      const result = await createUserAndRegister();
+      if (result) {
+        setCurrentStep(2);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -250,8 +316,12 @@ export function RegisterPage({ onRegister, onNavigateLogin, onBack }: RegisterPa
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">
-                    Lanjut ke Pembayaran
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700" 
+                    disabled={loading}
+                  >
+                    {loading ? 'Memproses...' : 'Lanjut ke Pembayaran'}
                   </Button>
                 </div>
 

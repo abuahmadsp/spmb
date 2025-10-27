@@ -19,17 +19,45 @@ export function PaymentForm({ onBack, onNext, onNavigateLogin, selectedCampus }:
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);
   const [proofOfPaymentPreview, setProofOfPaymentPreview] = useState<string | null>(null);
   const [registrationFee, setRegistrationFee] = useState<number>(250000); // Default biaya pendaftaran
+  const [loading, setLoading] = useState(false);
 
   // Ambil informasi rekening berdasarkan kampus yang dipilih
   useEffect(() => {
-    // Dalam implementasi sebenarnya, ini akan menjadi API call ke backend
-    // Untuk simulasi, kita buat data dummy
-    const mockBankAccount = {
-      bank_name: 'Bank Syariah Indonesia',
-      account_number: '1234567890',
-      account_name: 'Yayasan Islam Al Kahfi Batam'
+    const fetchBankAccount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Token tidak ditemukan');
+        }
+        
+        const response = await fetch(`/api/payments/accounts/${selectedCampus.campusId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Gagal mengambil informasi rekening');
+        }
+
+        const data = await response.json();
+        setBankAccount(data.account);
+      } catch (error: any) {
+        console.error('Error fetching bank account:', error);
+        // Gunakan data dummy jika gagal mengambil dari backend
+        const mockBankAccount = {
+          bank_name: 'Bank Syariah Indonesia',
+          account_number: '1234567890',
+          account_name: 'Yayasan Islam Al Kahfi Batam'
+        };
+        setBankAccount(mockBankAccount);
+      }
     };
-    setBankAccount(mockBankAccount);
+
+    if (selectedCampus) {
+      fetchBankAccount();
+    }
   }, [selectedCampus]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,18 +74,57 @@ export function PaymentForm({ onBack, onNext, onNavigateLogin, selectedCampus }:
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validasi bahwa bukti pembayaran telah diunggah
     if (!proofOfPayment) {
       alert('Mohon unggah bukti pembayaran terlebih dahulu.');
       return;
     }
     
-    // Di sini Anda akan mengirim data pembayaran ke server
-    // Untuk sekarang, kita langsung lanjut ke halaman berikutnya
-    onNext();
+    setLoading(true);
+    try {
+      // Ambil ID pendaftaran dari sessionStorage atau state sebelumnya
+      // Dalam implementasi sebenarnya, ini akan diambil dari konteks pengguna
+      // atau dari proses pendaftaran sebelumnya
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token tidak ditemukan');
+      }
+
+      // Buat FormData untuk mengunggah file
+      const formData = new FormData();
+      formData.append('proof_of_payment', proofOfPayment);
+      formData.append('applicant_id', '1'); // Dalam implementasi sebenarnya, ini akan diambil dari data pendaftaran
+      formData.append('payment_type', 'registration_fee');
+      formData.append('amount', registrationFee.toString());
+      formData.append('payment_method', paymentMethod);
+
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          // Untuk upload file, jangan sertakan Content-Type, biarkan browser yang menentukan
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Gagal mengirim bukti pembayaran');
+      }
+
+      const paymentData = await response.json();
+      console.log('Pembayaran berhasil dikirim:', paymentData);
+      
+      // Setelah pembayaran berhasil, lanjutkan ke halaman berikutnya
+      onNext();
+    } catch (error: any) {
+      console.error('Error submitting payment:', error);
+      alert(error.message || 'Terjadi kesalahan saat mengirim pembayaran');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
